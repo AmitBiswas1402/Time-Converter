@@ -2,8 +2,8 @@ import { ConverterApp } from "@/components/ConverterApp";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-zinc-50 to-zinc-100/60 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900/60 text-zinc-900 dark:text-zinc-100 flex flex-col justify-between p-4 sm:p-8 md:p-12 font-sans selection:bg-blue-500/20">
-      <div className="flex-1 flex flex-col items-center justify-start max-w-6xl mx-auto w-full py-6 sm:py-8">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-zinc-100 to-zinc-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col justify-between p-4 sm:p-8 md:p-12 font-sans selection:bg-blue-500/20">
+      <div className="flex-1 flex flex-col items-center justify-start max-w-6xl mx-auto w-full py-2">
         <ConverterApp />
       </div>
 

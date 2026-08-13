@@ -18,6 +18,7 @@ interface SourceCardProps {
   onMinuteChange: (val: string) => void;
   onAmPmChange: (val: "AM" | "PM") => void;
   onResetToNow: () => void;
+  onFocusGlobe?: () => void;
 }
 
 export const SourceCard: React.FC<SourceCardProps> = ({
@@ -33,6 +34,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
   onMinuteChange,
   onAmPmChange,
   onResetToNow,
+  onFocusGlobe,
 }) => {
   const hoursOptions = Array.from({ length: 12 }, (_, i) =>
     String(i + 1).padStart(2, "0")
@@ -45,37 +47,41 @@ export const SourceCard: React.FC<SourceCardProps> = ({
 
   return (
     <div
-      className={`relative w-full rounded-2xl p-5 shadow-lg border transition-all duration-300 flex flex-col justify-between overflow-hidden ${
+      onClick={onFocusGlobe}
+      className={`relative w-full rounded-2xl p-5 shadow-2xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer ${
         isDay
-          ? "bg-gradient-to-br from-amber-500/10 via-white to-sky-500/10 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-850 border-amber-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
-          : "bg-gradient-to-br from-slate-950 via-indigo-950 to-zinc-950 text-slate-100 border-indigo-900/60 shadow-indigo-950/40"
+          ? "bg-white/45 dark:bg-zinc-900/45 border-amber-300/50 dark:border-white/20 text-zinc-900 dark:text-zinc-100 shadow-amber-500/10"
+          : "bg-slate-950/45 border-indigo-900/50 text-slate-100 shadow-indigo-950/40"
       }`}
     >
       {/* Header Tag */}
-      <div className="flex items-center justify-between gap-2 border-b pb-3 mb-4 border-black/5 dark:border-white/10">
+      <div className="flex items-center justify-between gap-2 border-b pb-3 mb-4 border-black/10 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-600 text-white shadow-2xs">
+          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-600/90 text-white shadow-2xs">
             Source Location
           </span>
 
-          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-black/5 dark:bg-white/10">
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-black/10 dark:bg-white/10 backdrop-blur-xs">
             {isDay ? (
               <>
-                <Sun className="w-3 h-3 text-amber-500 fill-amber-500" />
-                <span className="text-amber-700 dark:text-amber-300">Daytime</span>
+                <Sun className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span className="text-amber-800 dark:text-amber-300 font-bold">Daytime</span>
               </>
             ) : (
               <>
-                <Moon className="w-3 h-3 text-indigo-300 fill-indigo-300" />
-                <span className="text-indigo-200">Nighttime</span>
+                <Moon className="w-3.5 h-3.5 text-indigo-300 fill-indigo-300" />
+                <span className="text-indigo-200 font-bold">Nighttime</span>
               </>
             )}
           </div>
         </div>
 
         <button
-          onClick={onResetToNow}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onResetToNow();
+          }}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold opacity-80 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all cursor-pointer"
           title="Reset to current moment"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -85,8 +91,11 @@ export const SourceCard: React.FC<SourceCardProps> = ({
 
       {/* Location Selector Button */}
       <button
-        onClick={onOpenLocationModal}
-        className="w-full mb-5 flex items-center justify-between p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all text-left group cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenLocationModal();
+        }}
+        className="w-full mb-5 flex items-center justify-between p-3.5 rounded-xl bg-white/40 dark:bg-white/10 hover:bg-white/60 dark:hover:bg-white/20 border border-black/10 dark:border-white/15 transition-all text-left group cursor-pointer backdrop-blur-xs"
       >
         <div className="flex items-center gap-3 min-w-0">
           <CountryFlag
@@ -98,7 +107,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
             <div className="font-bold text-base leading-tight truncate group-hover:text-blue-500 transition-colors">
               {location.name}
             </div>
-            <div className="text-xs opacity-70 truncate">
+            <div className="text-xs opacity-75 truncate">
               {location.countryName} · {formattedTime.tzAbbr} ({formattedTime.utcOffset})
             </div>
           </div>
@@ -110,7 +119,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
       <div className="space-y-4">
         {/* Date Selector */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold opacity-70 uppercase tracking-wider flex items-center gap-1.5">
+          <label className="text-xs font-semibold opacity-75 uppercase tracking-wider flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
             <span>Date</span>
           </label>
@@ -118,18 +127,18 @@ export const SourceCard: React.FC<SourceCardProps> = ({
             type="date"
             value={dateIso}
             onChange={(e) => onDateChange(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-white/50 dark:bg-white/10 border border-black/10 dark:border-white/15 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all backdrop-blur-xs"
           />
         </div>
 
         {/* Time Selectors */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold opacity-70 uppercase tracking-wider flex items-center gap-1.5 justify-between">
+          <label className="text-xs font-semibold opacity-75 uppercase tracking-wider flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               <span>Time</span>
             </div>
-            <span className="font-mono text-xs font-bold text-blue-500 dark:text-blue-400">
+            <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
               :{formattedTime.secondsStr}s
             </span>
           </label>
@@ -138,7 +147,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
             <select
               value={hour}
               onChange={(e) => onHourChange(e.target.value)}
-              className="flex-1 px-3 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
+              className="flex-1 px-3 py-2.5 rounded-xl bg-white/50 dark:bg-zinc-800/80 border border-black/10 dark:border-white/15 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer backdrop-blur-xs"
             >
               {hoursOptions.map((h) => (
                 <option key={h} value={h} className="text-zinc-900 bg-white">
@@ -153,7 +162,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
             <select
               value={minute}
               onChange={(e) => onMinuteChange(e.target.value)}
-              className="flex-1 px-3 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
+              className="flex-1 px-3 py-2.5 rounded-xl bg-white/50 dark:bg-zinc-800/80 border border-black/10 dark:border-white/15 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer backdrop-blur-xs"
             >
               {minutesOptions.map((m) => (
                 <option key={m} value={m} className="text-zinc-900 bg-white">
@@ -166,7 +175,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
             <button
               type="button"
               onClick={() => onAmPmChange(ampm === "AM" ? "PM" : "AM")}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm transition-all cursor-pointer shadow-sm active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm transition-all cursor-pointer shadow-md active:scale-95 border border-blue-400/30"
             >
               {ampm}
             </button>
@@ -175,7 +184,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
       </div>
 
       {/* Solar Info Footer */}
-      <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10 text-center text-xs opacity-75">
+      <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 text-center text-xs opacity-80 font-medium">
         {isDay
           ? `🌇 Sunset around ${formattedTime.sunInfo.sunsetStr}`
           : `🌅 Sunrise around ${formattedTime.sunInfo.sunriseStr}`}

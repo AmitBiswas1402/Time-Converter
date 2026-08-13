@@ -36,7 +36,6 @@ export const LocalTimeHeader: React.FC<LocalTimeHeaderProps> = ({ onSyncToMyTime
     userLocation.lon
   );
 
-  // Get live seconds string
   const timeFormatterWithSeconds = new Intl.DateTimeFormat("en-US", {
     timeZone: userLocation.timezone,
     hour: "2-digit",
@@ -48,7 +47,7 @@ export const LocalTimeHeader: React.FC<LocalTimeHeaderProps> = ({ onSyncToMyTime
   const liveTimeString = timeFormatterWithSeconds.format(currentTime);
 
   return (
-    <div className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white rounded-2xl p-4 sm:p-5 shadow-lg border border-blue-400/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="w-full bg-gradient-to-r from-blue-600/75 via-indigo-600/75 to-violet-600/75 backdrop-blur-xl text-white rounded-2xl p-4 sm:p-5 shadow-2xl border border-white/30 flex flex-col sm:flex-row items-center justify-between gap-4">
       {/* Left: Device Local Time & Location */}
       <div className="flex items-center gap-3.5 min-w-0">
         <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/20 shadow-2xs">
@@ -84,7 +83,7 @@ export const LocalTimeHeader: React.FC<LocalTimeHeaderProps> = ({ onSyncToMyTime
       {/* Right: One-Tap Sync Button */}
       <button
         onClick={() => onSyncToMyTime(userLocation)}
-        className="w-full sm:w-auto px-4 py-2.5 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer hover:scale-102 active:scale-98"
+        className="w-full sm:w-auto px-4 py-2.5 bg-white/90 hover:bg-white text-blue-700 font-bold text-xs rounded-xl shadow-lg backdrop-blur-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer hover:scale-102 active:scale-98 border border-white/40"
       >
         <Zap className="w-4 h-4 fill-blue-600 stroke-none" />
         <span>Sync Converter to My Time</span>
