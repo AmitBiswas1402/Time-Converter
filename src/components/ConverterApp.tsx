@@ -16,6 +16,22 @@ import { LocalTimeHeader } from "./LocalTimeHeader";
 import { Globe } from "@/components/ui/cobe-globe";
 import { Plus, Sparkles, ArrowRightLeft, Globe as GlobeIcon, ChevronDown, Sun, Moon } from "lucide-react";
 
+// Static starfield data — generated once at module level so SSR and client match exactly
+const STARS = Array.from({ length: 60 }, (_, i) => {
+  // Deterministic pseudo-random using index as seed (avoids hydration mismatch)
+  const s = (n: number) => {
+    let x = Math.sin(n + i * 9.301 + 0.5) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  return {
+    width:   s(1) * 1.8 + 0.5,
+    height:  s(2) * 1.8 + 0.5,
+    top:     s(3) * 100,
+    left:    s(4) * 100,
+    opacity: s(5) * 0.6 + 0.15,
+  };
+});
+
 export const ConverterApp: React.FC = () => {
   // Default source location: India (Asia/Kolkata · IST)
   const indiaDefault = LOCATIONS.find((l) => l.id === "in-kolkata") || LOCATIONS[0];
@@ -97,7 +113,7 @@ export const ConverterApp: React.FC = () => {
     );
   }, [sourceUtcDate, sourceLocation]);
 
-  // Construct markers for shadcn Cobe Globe component
+  // Globe markers — all locations
   const globeMarkers = useMemo(() => {
     const all = [sourceLocation, ...targetLocations];
     return all.map((loc) => ({
@@ -107,15 +123,13 @@ export const ConverterApp: React.FC = () => {
     }));
   }, [sourceLocation, targetLocations]);
 
-  // Construct arcs connecting source to target locations
-  const globeArcs = useMemo(() => {
-    return targetLocations.map((t) => ({
-      id: `${sourceLocation.id}-${t.id}`,
-      from: [sourceLocation.lat, sourceLocation.lon] as [number, number],
-      to: [t.lat, t.lon] as [number, number],
-      label: `${sourceLocation.city} → ${t.city}`,
-    }));
-  }, [sourceLocation, targetLocations]);
+  // Arcs connecting source to each target
+  const globeArcs = useMemo(() => targetLocations.map((t) => ({
+    id: `${sourceLocation.id}-${t.id}`,
+    from: [sourceLocation.lat, sourceLocation.lon] as [number, number],
+    to: [t.lat, t.lon] as [number, number],
+    label: `${sourceLocation.city} → ${t.city}`,
+  })), [sourceLocation, targetLocations]);
 
   // Handlers for date/time adjustments
   const handleResetToNow = () => {
@@ -238,27 +252,38 @@ export const ConverterApp: React.FC = () => {
         {/* Live Device PC Local Time Banner */}
         <LocalTimeHeader onSyncToMyTime={handleSyncToUserDeviceTime} />
 
-        {/* PROMINENT HERO 3D GLOBE CONTAINER */}
-        <div
-          className={`relative w-full rounded-3xl p-6 sm:p-8 shadow-2xl border transition-all duration-700 overflow-hidden flex flex-col items-center justify-center ${
-            isDay
-              ? "bg-gradient-to-b from-sky-200/60 via-amber-100/50 to-sky-100/70 border-amber-300/60 text-zinc-900 shadow-amber-500/10"
-              : "bg-gradient-to-b from-slate-950 via-slate-900 to-zinc-950 border-indigo-900/60 text-slate-100 shadow-indigo-950/40"
-          }`}
-        >
+        {/* PROMINENT HERO 3D GLOBE CONTAINER — deep space dark always */}
+        <div className="relative w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-indigo-900/40 text-slate-100 shadow-indigo-950/50 overflow-hidden flex flex-col items-center justify-center bg-gradient-to-b from-[#050a1a] via-[#07102a] to-[#030712]">
+          {/* Starfield background — static positions to avoid SSR hydration mismatch */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            {STARS.map((star, i) => (
+              <span
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: star.width + "px",
+                  height: star.height + "px",
+                  top: star.top + "%",
+                  left: star.left + "%",
+                  opacity: star.opacity,
+                }}
+              />
+            ))}
+          </div>
+
           {/* Globe Header Status Bar */}
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-black/10 dark:bg-white/10 backdrop-blur-md">
-              <GlobeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin-slow" />
-              <span>Pointed Location: {sourceLocation.name}</span>
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 mb-3 z-10">
+            <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-white/8 backdrop-blur-md border border-white/10">
+              <GlobeIcon className="w-4 h-4 text-blue-400" />
+              <span className="text-slate-200">Live Solar Position · Day &amp; Night Terminator</span>
             </div>
 
             {/* Live Day vs Night Solar Status */}
-            <div className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-full bg-black/10 dark:bg-white/10 backdrop-blur-md">
+            <div className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-full bg-white/8 backdrop-blur-md border border-white/10">
               {isDay ? (
                 <>
-                  <Sun className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span className="text-amber-800 dark:text-amber-300">
+                  <Sun className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span className="text-amber-300">
                     Daytime · Sunset {sourceFormatted.sunInfo.sunsetStr}
                   </span>
                 </>
@@ -273,19 +298,22 @@ export const ConverterApp: React.FC = () => {
             </div>
           </div>
 
-          {/* shadcn UI Cobe Globe Component */}
-          <div className="w-full max-w-[480px] mx-auto py-2">
+          {/* shadcn Globe with real-astronomy sun glow */}
+          <div className="w-full max-w-[500px] mx-auto py-2 z-10">
             <Globe
               markers={globeMarkers}
               arcs={globeArcs}
-              dark={isDay ? 0 : 1}
-              baseColor={isDay ? [0.95, 0.96, 0.98] : [0.08, 0.1, 0.22]}
-              glowColor={isDay ? [0.94, 0.93, 0.91] : [0.15, 0.35, 0.85]}
-              markerColor={isDay ? [0.2, 0.5, 0.95] : [0.25, 0.65, 1]}
-              arcColor={isDay ? [0.2, 0.5, 0.95] : [0.3, 0.6, 1]}
-              mapBrightness={isDay ? 8 : 4.5}
+              dark={1}
+              baseColor={[0.18, 0.52, 0.28]}
+              glowColor={[0.06, 0.1, 0.26]}
+              markerColor={[1, 0.75, 0.1]}
+              arcColor={[0.5, 0.8, 0.4]}
+              mapBrightness={10}
               markerSize={0.035}
-              arcWidth={0.6}
+              arcWidth={0.5}
+              diffuse={2.0}
+              opacity={0.5}
+              showSunGlow={true}
             />
           </div>
 

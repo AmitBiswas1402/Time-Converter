@@ -35,7 +35,112 @@ interface GlobeProps {
   diffuse?: number
   mapSamples?: number
   opacity?: number
+  showSunGlow?: boolean // Draw real-time sun glow at the terminator
 }
+
+// ─── Astronomy: sub-solar position ──────────────────────────────────────────
+
+function getSunPosition(date: Date): { lat: number; lon: number } {
+  const JD = date.getTime() / 86400000 + 2440587.5
+  const n = JD - 2451545.0
+  const L = (280.46 + 0.9856474 * n) % 360
+  const g = ((357.528 + 0.9856003 * n) % 360) * (Math.PI / 180)
+  const lambda = (L + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * (Math.PI / 180)
+  const epsilon = (23.439 - 0.0000004 * n) * (Math.PI / 180)
+  const sinDec = Math.sin(epsilon) * Math.sin(lambda)
+  const lat = Math.asin(sinDec) * (180 / Math.PI)
+  const RA = Math.atan2(Math.cos(epsilon) * Math.sin(lambda), Math.cos(lambda))
+  const GMST = (18.697374558 + 24.06570982441908 * n) % 24
+  const GHA = ((GMST * 15 - RA * (180 / Math.PI)) + 360) % 360
+  const lon = ((180 - GHA + 180) % 360) - 180
+  return { lat, lon }
+}
+
+/**
+ * Project a geographic point (lat, lon) onto the canvas given the
+ * current globe rotation angles phi (Y-axis) and theta (X-axis tilt).
+ */
+function projectGeoToCanvas(
+  lat: number,
+  lon: number,
+  phi: number,
+  theta: number,
+  size: number,
+): { x: number; y: number; visible: boolean } {
+  const latR = (lat * Math.PI) / 180
+  const lonR = (lon * Math.PI) / 180
+
+  // 3-D unit vector for the geographic point
+  const px = Math.cos(latR) * Math.sin(lonR)
+  const py = Math.sin(latR)
+  const pz = Math.cos(latR) * Math.cos(lonR)
+
+  // Rotate by -phi around Y (undo globe's horizontal rotation)
+  const cosPhi = Math.cos(-phi)
+  const sinPhi = Math.sin(-phi)
+  const rx = px * cosPhi + pz * sinPhi
+  const ry = py
+  const rz = -px * sinPhi + pz * cosPhi
+
+  // Rotate by -theta around X (undo globe's vertical tilt)
+  const cosT = Math.cos(-theta)
+  const sinT = Math.sin(-theta)
+  const fx = rx
+  const fy = ry * cosT - rz * sinT
+  const fz = ry * sinT + rz * cosT
+
+  return {
+    x: size / 2 + fx * (size / 2) * 0.97,
+    y: size / 2 - fy * (size / 2) * 0.97,
+    visible: fz > 0,
+  }
+}
+
+function drawSunGlow(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  phi: number,
+  theta: number,
+) {
+  ctx.clearRect(0, 0, size, size)
+  const { lat, lon } = getSunPosition(new Date())
+  const proj = projectGeoToCanvas(lat, lon, phi, theta, size)
+  if (!proj.visible) return
+
+  const { x, y } = proj
+
+  // Outer aura
+  const aura = ctx.createRadialGradient(x, y, 0, x, y, size * 0.22)
+  aura.addColorStop(0, "rgba(255,210,60,0.18)")
+  aura.addColorStop(0.35, "rgba(255,150,20,0.08)")
+  aura.addColorStop(1, "rgba(255,80,0,0)")
+  ctx.beginPath()
+  ctx.arc(x, y, size * 0.22, 0, Math.PI * 2)
+  ctx.fillStyle = aura
+  ctx.fill()
+
+  // Mid glow
+  const mid = ctx.createRadialGradient(x, y, 0, x, y, size * 0.075)
+  mid.addColorStop(0, "rgba(255,248,140,0.92)")
+  mid.addColorStop(0.45, "rgba(255,190,45,0.65)")
+  mid.addColorStop(1, "rgba(255,110,0,0)")
+  ctx.beginPath()
+  ctx.arc(x, y, size * 0.075, 0, Math.PI * 2)
+  ctx.fillStyle = mid
+  ctx.fill()
+
+  // Core sun disc
+  const core = ctx.createRadialGradient(x, y, 0, x, y, size * 0.026)
+  core.addColorStop(0, "rgba(255,255,245,1)")
+  core.addColorStop(0.38, "rgba(255,228,80,1)")
+  core.addColorStop(1, "rgba(255,160,20,0.65)")
+  ctx.beginPath()
+  ctx.arc(x, y, size * 0.026, 0, Math.PI * 2)
+  ctx.fillStyle = core
+  ctx.fill()
+}
+
+// ─── Globe component ─────────────────────────────────────────────────────────
 
 export function Globe({
   markers = [],
@@ -55,9 +160,11 @@ export function Globe({
   theta = 0.25,
   diffuse = 1.6,
   mapSamples = 20000,
-  opacity = 0.65, // Back-side depth opacity showing dots through Earth sphere
+  opacity = 0.65,
+  showSunGlow = false,
 }: GlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const overlayRef = useRef<HTMLCanvasElement>(null)
   const pointerInteracting = useRef<{ x: number; y: number } | null>(null)
   const lastPointer = useRef<{ x: number; y: number; t: number } | null>(null)
   const dragOffset = useRef({ phi: 0, theta: 0 })
@@ -65,47 +172,20 @@ export function Globe({
   const phiOffsetRef = useRef(0)
   const thetaOffsetRef = useRef(0)
   const isPausedRef = useRef(false)
+  // Track the CURRENT phi for sun projection
+  const currentPhiRef = useRef(0)
 
-  // Use refs for props so useEffect dependency array size never changes
   const propsRef = useRef({
-    markers,
-    arcs,
-    markerColor,
-    baseColor,
-    arcColor,
-    glowColor,
-    dark,
-    mapBrightness,
-    markerSize,
-    markerElevation,
-    arcWidth,
-    arcHeight,
-    speed,
-    theta,
-    diffuse,
-    mapSamples,
-    opacity,
+    markers, arcs, markerColor, baseColor, arcColor, glowColor, dark,
+    mapBrightness, markerSize, markerElevation, arcWidth, arcHeight, speed,
+    theta, diffuse, mapSamples, opacity, showSunGlow,
   })
 
   useEffect(() => {
     propsRef.current = {
-      markers,
-      arcs,
-      markerColor,
-      baseColor,
-      arcColor,
-      glowColor,
-      dark,
-      mapBrightness,
-      markerSize,
-      markerElevation,
-      arcWidth,
-      arcHeight,
-      speed,
-      theta,
-      diffuse,
-      mapSamples,
-      opacity,
+      markers, arcs, markerColor, baseColor, arcColor, glowColor, dark,
+      mapBrightness, markerSize, markerElevation, arcWidth, arcHeight, speed,
+      theta, diffuse, mapSamples, opacity, showSunGlow,
     }
   })
 
@@ -123,16 +203,9 @@ export function Globe({
       const now = Date.now()
       if (lastPointer.current) {
         const dt = Math.max(now - lastPointer.current.t, 1)
-        const maxVelocity = 0.2
         velocity.current = {
-          phi: Math.max(
-            -maxVelocity,
-            Math.min(maxVelocity, ((e.clientX - lastPointer.current.x) / dt) * 0.4)
-          ),
-          theta: Math.max(
-            -maxVelocity,
-            Math.min(maxVelocity, ((e.clientY - lastPointer.current.y) / dt) * 0.2)
-          ),
+          phi: Math.max(-0.2, Math.min(0.2, ((e.clientX - lastPointer.current.x) / dt) * 0.4)),
+          theta: Math.max(-0.2, Math.min(0.2, ((e.clientY - lastPointer.current.y) / dt) * 0.2)),
         }
       }
       lastPointer.current = { x: e.clientX, y: e.clientY, t: now }
@@ -163,6 +236,7 @@ export function Globe({
   useEffect(() => {
     if (!canvasRef.current) return
     const canvas = canvasRef.current
+    const overlay = overlayRef.current
     let globe: ReturnType<typeof createGlobe> | null = null
     let animationId: number
     let phi = 0
@@ -173,6 +247,12 @@ export function Globe({
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const currentProps = propsRef.current
+
+      // Sync overlay size to globe
+      if (overlay) {
+        overlay.width = width
+        overlay.height = width
+      }
 
       globe = createGlobe(canvas, {
         devicePixelRatio: dpr,
@@ -219,10 +299,16 @@ export function Globe({
           }
         }
 
+        const totalPhi = phi + phiOffsetRef.current + dragOffset.current.phi
+        const totalTheta = p.theta + thetaOffsetRef.current + dragOffset.current.theta
+
+        // Store current phi for sun projection
+        currentPhiRef.current = totalPhi
+
         if (globe) {
           globe.update({
-            phi: phi + phiOffsetRef.current + dragOffset.current.phi,
-            theta: p.theta + thetaOffsetRef.current + dragOffset.current.theta,
+            phi: totalPhi,
+            theta: totalTheta,
             dark: p.dark,
             mapBrightness: p.mapBrightness,
             markerColor: p.markerColor,
@@ -241,12 +327,22 @@ export function Globe({
             })),
           })
         }
+
+        // Draw sun overlay if enabled
+        if (p.showSunGlow && overlay) {
+          const ctx = overlay.getContext("2d")
+          if (ctx) {
+            drawSunGlow(ctx, width, totalPhi, totalTheta)
+          }
+        }
+
         animationId = requestAnimationFrame(animate)
       }
 
       animate()
       setTimeout(() => {
         if (canvas) canvas.style.opacity = "1"
+        if (overlay) overlay.style.opacity = "1"
       }, 100)
     }
 
@@ -266,7 +362,7 @@ export function Globe({
       if (animationId) cancelAnimationFrame(animationId)
       if (globe) globe.destroy()
     }
-  }, []) // Empty dependency array ensures globe initializes cleanly once without size mismatch errors
+  }, [])
 
   return (
     <div className={`relative aspect-square select-none ${className}`}>
@@ -281,6 +377,20 @@ export function Globe({
           transition: "opacity 1.2s ease",
           borderRadius: "50%",
           touchAction: "none",
+        }}
+      />
+      {/* Sun glow overlay canvas — stacked absolutely on top */}
+      <canvas
+        ref={overlayRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0,
+          transition: "opacity 1.2s ease",
+          pointerEvents: "none",
+          borderRadius: "50%",
         }}
       />
       {markers.map((m) => (
@@ -319,45 +429,6 @@ export function Globe({
           />
         </div>
       ))}
-      {arcs
-        .filter((a) => a.label)
-        .map((a) => (
-          <div
-            key={a.id}
-            style={{
-              position: "absolute",
-              bottom: "100%",
-              left: "50%",
-              translate: "-50% 0",
-              marginBottom: 8,
-              padding: "2px 6px",
-              background: "#fff",
-              color: "#1a1a2e",
-              fontFamily: "monospace",
-              fontSize: "0.6rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase" as const,
-              whiteSpace: "nowrap" as const,
-              pointerEvents: "none" as const,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-              opacity: `var(--cobe-visible-arc-${a.id}, 0)`,
-              filter: `blur(calc((1 - var(--cobe-visible-arc-${a.id}, 0)) * 8px))`,
-              transition: "opacity 0.8s, filter 0.8s",
-            }}
-          >
-            {a.label}
-            <span
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: "50%",
-                transform: "translate3d(-50%, -1px, 0)",
-                border: "5px solid transparent",
-                borderTopColor: "#fff",
-              }}
-            />
-          </div>
-        ))}
     </div>
   )
 }
