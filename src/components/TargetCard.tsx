@@ -3,7 +3,7 @@
 import React from "react";
 import { TimeZoneOption, FormattedZonedTime } from "@/lib/timezones";
 import { CountryFlag } from "./CountryFlag";
-import { Sun, Moon, ArrowRightLeft, X, TrendingUp, TrendingDown, Clock, Sparkles } from "lucide-react";
+import { Sun, Moon, ArrowRightLeft, X, TrendingUp, TrendingDown, Clock } from "lucide-react";
 
 interface TargetCardProps {
   location: TimeZoneOption;
@@ -24,8 +24,8 @@ export const TargetCard: React.FC<TargetCardProps> = ({
   canRemove,
 }) => {
   const isDay = formattedTime.sunInfo.isDay;
-  const isAhead = formattedTime.diffHours > 0;
-  const isBehind = formattedTime.diffHours < 0;
+  const isAhead = formattedTime.diffMinutes > 0;
+  const isBehind = formattedTime.diffMinutes < 0;
 
   return (
     <div

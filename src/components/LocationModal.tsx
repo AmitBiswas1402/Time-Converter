@@ -37,14 +37,12 @@ export const LocationModal: React.FC<LocationModalProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const [activeCountry, setActiveCountry] = useState<CountryItem | null>(null);
-  const [selectedQuickCountry, setSelectedQuickCountry] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setSearch("");
       setActiveCountry(null);
-      setSelectedQuickCountry(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);

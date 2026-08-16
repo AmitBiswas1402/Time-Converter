@@ -3,12 +3,21 @@ import "./globals.css";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Time Zone Converter — Convert Any Time Instantly",
-  description: "Fastest, clearest, and most intuitive timezone converter. Compare times across cities and countries around the world.",
+  description: "Fast, intuitive timezone converter. Compare times across cities and countries around the world with live solar tracking.",
 };
 
 export default function RootLayout({

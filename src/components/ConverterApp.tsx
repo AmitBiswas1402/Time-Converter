@@ -259,17 +259,17 @@ export const ConverterApp: React.FC = () => {
             );
           })}
 
-          {/* Enhanced "+ Add Time Zone" Glass Card */}
-          <div className="w-full min-h-[360px]">
-            <div className="w-full h-full min-h-[360px] rounded-3xl p-6 bg-gradient-to-b from-white/60 via-white/40 to-white/60 dark:from-zinc-900/60 dark:via-zinc-900/40 dark:to-zinc-900/60 hover:bg-white/80 dark:hover:bg-zinc-900/80 border-2 border-dashed border-blue-500/30 hover:border-blue-500/60 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col items-center justify-between text-center backdrop-blur-2xl group">
+          {/* Modern "+ Add Time Zone" Card */}
+          <div className="w-full min-h-[340px]">
+            <div className="w-full h-full min-h-[340px] rounded-3xl p-6 bg-gradient-to-b from-white/60 via-white/40 to-white/60 dark:from-zinc-900/60 dark:via-zinc-900/40 dark:to-zinc-900/60 hover:bg-white/80 dark:hover:bg-zinc-900/80 border-2 border-dashed border-blue-500/30 hover:border-blue-500/60 shadow-xl backdrop-blur-2xl transition-all duration-300 flex flex-col items-center justify-between text-center group">
               {/* Top Section */}
               <div className="w-full flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/10">
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   Quick Add
                 </span>
-                <span className="text-[11px] font-semibold opacity-60">
-                  {LOCATIONS.length}+ world cities
+                <span className="text-[11px] font-medium opacity-60">
+                  {LOCATIONS.length}+ cities
                 </span>
               </div>
 
@@ -282,14 +282,14 @@ export const ConverterApp: React.FC = () => {
                 }}
                 className="my-auto py-4 flex flex-col items-center justify-center space-y-3 cursor-pointer group/add w-full"
               >
-                <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover/add:scale-110 group-hover/add:rotate-90 transition-all duration-300 border border-white/30">
-                  <Plus className="w-8 h-8 stroke-[2.5]" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover/add:scale-110 group-hover/add:shadow-blue-500/40 transition-all duration-200">
+                  <Plus className="w-6 h-6 stroke-[2.5]" />
                 </div>
                 <div>
-                  <div className="font-black text-lg text-zinc-800 dark:text-zinc-100 group-hover/add:text-blue-600 dark:group-hover/add:text-blue-400 transition-colors">
+                  <div className="font-extrabold text-base text-zinc-900 dark:text-zinc-100 group-hover/add:text-blue-600 dark:group-hover/add:text-blue-400 transition-colors">
                     Add Time Zone
                   </div>
-                  <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 max-w-[200px] mx-auto mt-0.5">
+                  <div className="text-xs opacity-75 max-w-[200px] mx-auto mt-0.5">
                     Browse all countries & cities across all continents
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export const ConverterApp: React.FC = () => {
 
               {/* Bottom Quick-Add City Pills */}
               <div className="w-full pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
-                <div className="text-[11px] font-bold opacity-75 uppercase tracking-wider">
+                <div className="text-[11px] font-bold opacity-75 uppercase tracking-wider text-center">
                   Popular Time Zones:
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -312,7 +312,7 @@ export const ConverterApp: React.FC = () => {
                         key={loc.id}
                         type="button"
                         onClick={() => handleSelectLocationFromModal(loc)}
-                        className="px-2.5 py-1 rounded-xl text-xs font-bold bg-white/80 dark:bg-white/10 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-zinc-700 dark:text-zinc-300 border border-black/5 dark:border-white/10 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                        className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-400 border border-zinc-200 dark:border-zinc-700/60 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
                       >
                         <span>{loc.flag}</span>
                         <span>{loc.city}</span>
